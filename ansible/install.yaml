@@ -1,7 +1,7 @@
 - name: Install
   hosts: raspberry
-  user: ronan
-  become: yes #permet de passer root
+  user: ronan #set your raspberry pi username
+  become: yes #tells Ansible to use sudo
   tasks:
   - name: Update and upgrade apt packages
     become: true
@@ -40,7 +40,7 @@
       state: present
   - name: install mongo (2)
     ansible.builtin.apt:
-      name: mongodb-org-server=4.4.18
+      name: mongodb-org-server=4.4.18 #For some reason further 4.4 versions are not compatible with my raspberry pi CPU architecture ->"illegal instruction" error
       state: present
       update_cache: yes
   - name: Start mongodb systemd service
@@ -62,10 +62,3 @@
     ansible.builtin.apt:
       name: unifi
       state: present
-
-
-#curl https://dl.ui.com/unifi/unifi-repo.gpg | sudo tee /usr/share/keyrings/ubiquiti-archive-keyring.gpg >/dev/null
-
-#echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/ubiquiti-archive-keyring.gpg] https://www.ui.com/downloads/unifi/debian stable ubiquiti' | sudo tee /etc/apt/sources.list.d/100-ubnt-unifi.list >/dev/null
-
-#ansible-playbook -i inventory.ini install.yaml
