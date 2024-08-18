@@ -1,0 +1,71 @@
+- name: Install
+  hosts: raspberry
+  user: ronan
+  become: yes #permet de passer root
+  tasks:
+  - name: Update and upgrade apt packages
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+      cache_valid_time: 86400 #One day
+
+  - name: Install vim
+    ansible.builtin.apt:
+      name: vim
+      state: present
+      update_cache: yes
+  - name: install rng-tools
+    ansible.builtin.apt:
+      name: rng-tools
+      state: present
+  - name: configure rng-tools
+    ansible.builtin.replace:
+      path: /etc/default/rng-tools-debian
+      regexp: '#HRNGDEVICE=\/dev\/hwrng'
+      replace: 'HRNGDEVICE=\/dev\/hwrng'
+  - name: Restart rng-tools
+    ansible.builtin.systemd_service:
+      state: restarted
+      name: rng-tools
+  - name: Install libssl
+    ansible.builtin.apt:
+      name: libssl1.1
+      state: present
+      update_cache: yes
+
+  - name: Install mongo (1)
+    ansible.builtin.apt_repository:
+      repo: deb [ arch=arm64 trusted=yes] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse
+      state: present
+  - name: install mongo (2)
+    ansible.builtin.apt:
+      name: mongodb-org-server=4.4.18
+      state: present
+      update_cache: yes
+  - name: Start mongodb systemd service
+    ansible.builtin.systemd_service:
+      name: mongod
+      state: started
+      daemon_reload: true
+
+  - name: Install unifi gpg key
+    ansible.builtin.get_url:
+      url: https://dl.ui.com/unifi/unifi-repo.gpg 
+      dest: /usr/share/keyrings/ubiquiti-archive-keyring.gpg 
+      mode: '0644'
+  - name: Setup unifi repo
+    ansible.builtin.apt_repository: 
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/ubiquiti-archive-keyring.gpg] https://www.ui.com/downloads/unifi/debian stable ubiquiti
+      state: present
+  - name: install unifi
+    ansible.builtin.apt:
+      name: unifi
+      state: present
+
+
+#curl https://dl.ui.com/unifi/unifi-repo.gpg | sudo tee /usr/share/keyrings/ubiquiti-archive-keyring.gpg >/dev/null
+
+#echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/ubiquiti-archive-keyring.gpg] https://www.ui.com/downloads/unifi/debian stable ubiquiti' | sudo tee /etc/apt/sources.list.d/100-ubnt-unifi.list >/dev/null
+
+#ansible-playbook -i inventory.ini install.yaml
